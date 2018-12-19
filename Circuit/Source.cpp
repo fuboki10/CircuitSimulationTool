@@ -1,10 +1,10 @@
 #include <fstream>
-#include "node.h"
-#include "CS.h"
-#include "VS.h"
-#include "Resistor.h"
-#include "Capacitor.h"
-#include "Inductor.h"
+#include "Classes//node.h"
+#include "Classes//CS.h"
+#include "Classes//VS.h"
+#include "Classes//Resistor.h"
+#include "Classes//Capacitor.h"
+#include "Classes//Inductor.h"
 float pi = 3.14159265358979323846;
 float omega = 50;
 
