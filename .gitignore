@@ -3,9 +3,6 @@
 # Prerequisites
 *.d
 PT-Project.sdf
-# Prerequisites
-*.d
-
 # Compiled Object files
 *.slo
 *.lo
@@ -15,7 +12,6 @@ PT-Project.sdf
 *.vcxproj
 *.vcxproj.filters
 *.KKK
-
 # Precompiled Headers
 *.gch
 *.pch
@@ -377,5 +373,3 @@ ASALocalRun/
 
 # Text Files from Save 
 *.txt
-=======
->>>>>>> 6951668b611b67583b71ad0e9fcd3cfe6e1a4ad2
