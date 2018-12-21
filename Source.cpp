@@ -5,6 +5,7 @@
 #include "Classes//Resistor.h"
 #include "Classes//Capacitor.h"
 #include "Classes//Inductor.h"
+#include "Classes\VCCS.h"
 float pi = 3.14159265358979323846;
 float omega = 50;
 
@@ -22,6 +23,7 @@ int main()
 	vector <node*> nod;
 	vector <VS*> vs;
 	vector <CS*> cs;
+	vector <VCCS*> vccs;
 	vector <Resistor*> r;
 	vector <Capacitor*> c;
 	vector <Inductor*> l;
@@ -367,4 +369,4 @@ int main()
 	{
 		delete nod[i];
 	}
-}
+}	
