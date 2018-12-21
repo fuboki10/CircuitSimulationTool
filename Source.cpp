@@ -361,7 +361,7 @@ int main()
 	//freeing the dynamically allocated memory
 	for(int i = 0; i < circuit.size(); i++)
 	{
-		delete circuit[i];
+		delete circuit[i]; //nice delete 
 	}
 	for(int i = 0; i < nod.size(); i++)
 	{
