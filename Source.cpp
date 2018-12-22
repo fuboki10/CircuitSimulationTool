@@ -47,7 +47,7 @@ int main()
 		fin.open("input.txt");
 		char c = fin.peek();
 		while(c != 'V' && c != 'v' && c != 'i' && c != 'I' && c != 'c' && c != 'C' && c != 'R' && c != 'r' && c != 'l'&& c != 'L' && c != 'G' 
-			&& c != 'g' && c != 'f' && c != 'F')
+			&& c != 'g' && c != 'f' && c != 'F' && c != 'E' && c != 'e')
 		{
 			fin.get(c);
 			c = fin.peek();
@@ -484,13 +484,13 @@ int main()
 	x = solve(A, z);
 	//x.print("X:");
 	//printing the solution in a nice way
-	for(int i = 0; i < nod.size() - 1; i++)
+	/*for(int i = 0; i < nod.size() - 1; i++)
 	{
 		float mag = sqrt(norm(x(i)));
 		float phase = arg(x(i)) * 180/pi;
 		(x(i).imag() == 0 && x(i).real() == 0) ? cout<<"voltage of node "<<i + 1<<" = "<<mag<<endl : cout<<"voltage of node "<<i + 1<<" = "<<mag<<" "<<phase<<endl;
-	}
-	/*for(int i = 0; i < circuit.size(); i++)
+	}*/
+	for(int i = 0; i < circuit.size(); i++)
 	{
 		int n1 = circuit[i]->getNode1()->getn();
 		int n2 = circuit[i]->getNode2()->getn();
@@ -506,7 +506,7 @@ int main()
 		float mag = sqrt(norm(volt));
 		float phase = arg(volt) * 180/pi;
 		(volt.imag() == 0 && volt.real() == 0) ? cout<<"voltage of "<<circuit[i]->getid()<<" ("<<n1<<" "<<n2<<")"<<" = "<<mag<<endl : cout<<"voltage of "<<circuit[i]->getid()<<" ("<<n1<<" "<<n2<<") "<<" = "<<mag<<" "<<phase<<endl;
-	}*/
+	}
 	start = 0;
 	end = vs.size();
 	for(int i = start; i < end; i++)
