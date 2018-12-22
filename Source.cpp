@@ -8,6 +8,7 @@
 #include "Classes\VCCS.h"
 #include "Classes\CCCS.h"
 #include "Classes\VCVS.h"
+#include "Classes\CCVS.h"
 float pi = 3.14159265358979323846;
 float omega = 50;
 
@@ -28,6 +29,7 @@ int main()
 	vector <VCCS*> vccs;
 	vector <CCCS*> cccs;
 	vector <VCVS*> vcvs;
+	vector <CCVS*> ccvs;
 	vector <Resistor*> r;
 	vector <Capacitor*> c;
 	vector <Inductor*> l;
@@ -279,6 +281,50 @@ int main()
 				vcvs.push_back(tmp);
 				break;
 			}
+		case 'H':
+		case 'h':
+			{
+				node* INn1ptr = NULL;
+				node* INn2ptr = NULL;
+				fin>>value;
+				float phase;
+				fin>>phase;
+				fin>>n1;
+				//checking if the nodes already exists
+				for(int i = 0; i < nod.size(); i++)
+				{
+					if(n1 == nod[i]->getn())
+					{
+						INn1ptr = nod[i];
+						break;
+					}
+				}
+				fin>>n2;
+				for(int i = 0; i < nod.size(); i++)
+				{
+					if(n2 == nod[i]->getn())
+					{
+						INn2ptr = nod[i];
+						break;
+					}
+				}
+				//if the nodes are not there
+				//create them
+				if(!INn1ptr)
+				{
+					nod.push_back(new node(n1));
+					INn1ptr = nod[nod.size() - 1];
+				}
+				if(!INn2ptr)
+				{
+					nod.push_back(new node(n2));
+					INn2ptr = nod[nod.size() - 1];
+				}
+				CCVS* tmp = new CCVS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value, phase);
+				circuit.push_back(tmp);
+				ccvs.push_back(tmp);
+				break;
+			}
 
 			 //circuit.push_back(CS(
 		}
@@ -329,8 +375,8 @@ int main()
 	//Creating both B and C matrices
 	//Actually B = C(transpose) in case of independent sources
 	//Read the modified nodal analysis algorithm to know more about these matrices
-	cx_fmat B(nod.size() - 1, vs.size() + vccs.size() + cccs.size() + vcvs.size(), fill::zeros);
-	cx_fmat C(vs.size() + vccs.size() + cccs.size() + vcvs.size(), nod.size() - 1, fill::zeros);
+	cx_fmat B(nod.size() - 1, vs.size() + vccs.size() + cccs.size() + vcvs.size() + 2 * ccvs.size(), fill::zeros);
+	cx_fmat C(vs.size() + vccs.size() + cccs.size() + vcvs.size() + 2 * ccvs.size(), nod.size() - 1, fill::zeros);
 	int end = vs.size();
 	for(int i = 0; i < end; i++)
 	{
@@ -412,23 +458,51 @@ int main()
 		{
 			C(i ,vcvs[i - start]->getINNegative() - 1) = (cx_float)(1) * vcvs[i - start]->getB();
 		}
-
+	}
+	start = end;
+	end += ccvs.size();
+	for(int i = start,j = start; i < end; i++,j+=2)
+	{
+		if(ccvs[i - start]->getPostive() != 0)
+		{
+			B(ccvs[i - start]->getPostive() - 1, j + 1) = -1;
+			C(j ,ccvs[i - start]->getPostive() - 1) = 1;
+		}
+		if(ccvs[i - start]->getNegative() != 0)
+		{
+			B(ccvs[i - start]->getNegative() - 1, j + 1) = 1;
+			C(j ,ccvs[i - start]->getNegative() - 1) = -1;
+		}
+		if(ccvs[i - start]->INfrom() != 0)
+		{
+			B(ccvs[i - start]->INfrom() - 1, j) = 1;
+			C(j + 1,ccvs[i - start]->INfrom() - 1) = 1;
+		}
+		if(ccvs[i - start]->INinto() != 0)
+		{
+			B(ccvs[i - start]->INfrom() - 1, j) = -1;
+			C(j + 1,ccvs[i - start]->INinto() - 1) = -1;
+		}
 	}
 	//B.print("B: ");
 	//C.print("C: ");
-	cx_fmat D(vcvs.size() + cccs.size() + vccs.size() + vs.size(), vcvs.size() + cccs.size() + vccs.size() + vs.size(), fill::zeros);
+	cx_fmat D(vcvs.size() + cccs.size() + vccs.size() + vs.size() + 2 * ccvs.size(), vcvs.size() + cccs.size() + vccs.size() + vs.size() + 2 * ccvs.size(), fill::zeros);
 	for (int i = vs.size(); i < vs.size() + vccs.size(); i++)
 	{
 		D(i,i) = (cx_float)(-1)/vccs[i - vs.size()]->getB();
 	}
+	for (int i = vcvs.size() + cccs.size() + vccs.size() + vs.size(),j = vcvs.size() + cccs.size() + vccs.size() + vs.size(); i < vcvs.size() + cccs.size() + vccs.size() + vs.size() + ccvs.size(); i++,j+=2)
+	{
+		D(j,j) = (cx_float)(-1) * ccvs[i - vcvs.size() + cccs.size() + vccs.size() + vs.size()]->getB();
+	}
 	//Creating matrix z
 	//Matrix z consists of 2 matrices
 	//Read more about modified nodal analysis
-	cx_fmat z(nod.size() - 1 + vs.size() + vccs.size() + cccs.size() + vcvs.size(), 1, fill::zeros);
+	cx_fmat z(nod.size() - 1 + vs.size() + vccs.size() + cccs.size() + vcvs.size() + 2 * ccvs.size(), 1, fill::zeros);
 	for(int i = 0; i < cs.size(); i++)
 	{
 		if(cs[i]->from() != 0)
-		{
+			{
 			z(cs[i]->from() - 1, 0) -= cs[i]->getValue();
 		}
 		if(cs[i]->into() != 0)
@@ -444,7 +518,7 @@ int main()
 	//Combining the four matrices to create the matrix A
 	//Note : A x = Z
 	//x is the solution
-	cx_fmat A(vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1, vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1, fill::zeros);
+	cx_fmat A(2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1, vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1, fill::zeros);
 	for(int i = 0; i < nod.size() - 1; i++)
 	{
 		for(int j = 0; j < nod.size() - 1; j++)
@@ -455,13 +529,13 @@ int main()
 	}
 	for(int i = 0; i < nod.size() - 1; i++)
 	{
-		for(int j = nod.size() - 1; j < vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1; j++)
+		for(int j = nod.size() - 1; j < 2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1; j++)
 		{
 			A(i, j) = B(i, j - nod.size() + 1);
 		}
 
 	}
-	for(int i = nod.size() - 1; i < vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1; i++)
+	for(int i = nod.size() - 1; i < 2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1; i++)
 	{
 		for(int j = 0; j < nod.size() - 1; j++)
 		{
@@ -469,9 +543,9 @@ int main()
 		}
 
 	}
-	for(int i = nod.size() - 1; i < vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1; i++)
+	for(int i = nod.size() - 1; i < 2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1; i++)
 	{
-		for(int j = nod.size() - 1; j < vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1; j++)
+		for(int j = nod.size() - 1; j < 2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1; j++)
 		{
 			A(i, j) = D(i - nod.size() + 1, j - nod.size() + 1);
 		}
@@ -479,7 +553,7 @@ int main()
 	}
 	//A.print("A: ");
 	//create the solution matrix
-	cx_fmat x = cx_fmat(1, vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1);
+	cx_fmat x = cx_fmat(1, 2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1);
 	x = solve(A, z);
 	//x.print("X:");
 	//printing the solution in a nice way
@@ -541,6 +615,15 @@ int main()
 		float phase = arg(x(nod.size() - 1 + i)) * 180/pi;
 		phase = (phase == -0) ? 0 : phase;
 		cout<<"current in "<<vcvs[i - start]->getid()<<" ("<<vcvs[i - start]->getNegative()<<" "<<vcvs[i - start]->getPostive()<<")"<<" source = "<<mag<<" "<<phase<<endl;
+	}
+	start = end;
+	end += ccvs.size();
+	for (int i = start; i < end; i++)
+	{
+		float mag = sqrt(norm(x(nod.size() - 1 + i)));
+		float phase = arg(x(nod.size() - 1 + i)) * 180/pi;
+		phase = (phase == -0) ? 0 : phase;
+		cout<<"current in "<<ccvs[i - start]->getid()<<" ("<<vcvs[i - start]->getNegative()<<" "<<vcvs[i - start]->getPostive()<<")"<<" source = "<<mag<<" "<<phase<<endl;
 	}
 	for(int i = 0; i < r.size(); i++)
 	{

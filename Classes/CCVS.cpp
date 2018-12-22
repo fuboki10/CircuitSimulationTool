@@ -30,6 +30,14 @@ int CCVS::getPostive()
 {
 	return getNode2()->getn();
 }
+int CCVS::INfrom()
+{
+	return INn1->getn();
+}
+int CCVS::INinto()
+{
+	return INn2->getn();
+}
 
 
 CCVS::~CCVS(void)
