@@ -18,6 +18,8 @@ public:
 	float getB() const;
 	int getPostive();
 	int getNegative();
+	int getINPostive();
+	int getINNegative();
 	~VCVS(void);
 };
 
