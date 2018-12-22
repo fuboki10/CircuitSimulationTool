@@ -48,7 +48,8 @@ int main()
 		fin.close();
 		fin.open("input.txt");
 		char c = fin.peek();
-		while(c != 'V' && c != 'v' && c != 'i' && c != 'I' && c != 'c' && c != 'C' && c != 'R' && c != 'r' && c != 'l'&& c != 'L')
+		while(c != 'V' && c != 'v' && c != 'i' && c != 'I' && c != 'c' && c != 'C' && c != 'R' && c != 'r' && c != 'l'&& c != 'L' && c != 'G' 
+			&& c != 'g' && c != 'f' && c != 'F')
 		{
 			fin.get(c);
 			c = fin.peek();
