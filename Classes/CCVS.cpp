@@ -2,9 +2,8 @@
 
 int CCVS::num = 0;
 extern float pi;
-CCVS::CCVS(string i, node* n1, node* n2, node* INn1, node* INn2, float B, float p):CElement(i,n1,n2),B(B)
+CCVS::CCVS(string i, node* n1, node* n2, node* INn1, node* INn2, float B):CElement(i,n1,n2),B(B)
 {
-	phase = p;
 	this->INn1 = INn1;
 	this->INn2 = INn2;
 	num++;

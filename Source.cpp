@@ -156,8 +156,6 @@ int main()
 				node* INn1ptr = NULL;
 				node* INn2ptr = NULL;
 				fin>>value;
-				float phase;
-				fin>>phase;
 				fin>>n1;
 				//checking if the nodes already exists
 				for(int i = 0; i < nod.size(); i++)
@@ -189,7 +187,7 @@ int main()
 					nod.push_back(new node(n2));
 					INn2ptr = nod[nod.size() - 1];
 				}
-				VCCS* tmp = new VCCS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value, phase);
+				VCCS* tmp = new VCCS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value);
 				circuit.push_back(tmp);
 				vccs.push_back(tmp);
 				break;
@@ -200,8 +198,6 @@ int main()
 				node* INn1ptr = NULL;
 				node* INn2ptr = NULL;
 				fin>>value;
-				float phase;
-				fin>>phase;
 				fin>>n1;
 				//checking if the nodes already exists
 				for(int i = 0; i < nod.size(); i++)
@@ -233,7 +229,7 @@ int main()
 					nod.push_back(new node(n2));
 					INn2ptr = nod[nod.size() - 1];
 				}
-				CCCS* tmp = new CCCS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value, phase);
+				CCCS* tmp = new CCCS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value);
 				circuit.push_back(tmp);
 				cccs.push_back(tmp);
 				break;
@@ -244,8 +240,6 @@ int main()
 				node* INn1ptr = NULL;
 				node* INn2ptr = NULL;
 				fin>>value;
-				float phase;
-				fin>>phase;
 				fin>>n1;
 				//checking if the nodes already exists
 				for(int i = 0; i < nod.size(); i++)
@@ -277,7 +271,7 @@ int main()
 					nod.push_back(new node(n2));
 					INn2ptr = nod[nod.size() - 1];
 				}
-				VCVS* tmp = new VCVS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value, phase);
+				VCVS* tmp = new VCVS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value);
 				circuit.push_back(tmp);
 				vcvs.push_back(tmp);
 				break;
@@ -288,8 +282,6 @@ int main()
 				node* INn1ptr = NULL;
 				node* INn2ptr = NULL;
 				fin>>value;
-				float phase;
-				fin>>phase;
 				fin>>n1;
 				//checking if the nodes already exists
 				for(int i = 0; i < nod.size(); i++)
@@ -321,7 +313,7 @@ int main()
 					nod.push_back(new node(n2));
 					INn2ptr = nod[nod.size() - 1];
 				}
-				CCVS* tmp = new CCVS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value, phase);
+				CCVS* tmp = new CCVS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value);
 				circuit.push_back(tmp);
 				ccvs.push_back(tmp);
 				break;
@@ -481,7 +473,7 @@ int main()
 		}
 		if(ccvs[i - start]->INinto() != 0)
 		{
-			B(ccvs[i - start]->INfrom() - 1, j) = -1;
+			B(ccvs[i - start]->INinto() - 1, j) = -1;
 			C(j + 1,ccvs[i - start]->INinto() - 1) = -1;
 		}
 	}
@@ -494,7 +486,7 @@ int main()
 	}
 	for (int i = vcvs.size() + cccs.size() + vccs.size() + vs.size(),j = vcvs.size() + cccs.size() + vccs.size() + vs.size(); i < vcvs.size() + cccs.size() + vccs.size() + vs.size() + ccvs.size(); i++,j+=2)
 	{
-		D(j,j) = (cx_float)(-1) * ccvs[i - vcvs.size() + cccs.size() + vccs.size() + vs.size()]->getB();
+		D(j,j) = (cx_float)(-1) * ccvs[i - vcvs.size() - cccs.size() - vccs.size() - vs.size()]->getB();
 	}
 	//Creating matrix z
 	//Matrix z consists of 2 matrices
@@ -519,7 +511,7 @@ int main()
 	//Combining the four matrices to create the matrix A
 	//Note : A x = Z
 	//x is the solution
-	cx_fmat A(2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1, vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1, fill::zeros);
+	cx_fmat A(2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1, 2 * ccvs.size() + vcvs.size() + cccs.size() + vccs.size() + vs.size() + nod.size() - 1, fill::zeros);
 	for(int i = 0; i < nod.size() - 1; i++)
 	{
 		for(int j = 0; j < nod.size() - 1; j++)
@@ -624,7 +616,7 @@ int main()
 		float mag = sqrt(norm(x(nod.size() - 1 + i)));
 		float phase = arg(x(nod.size() - 1 + i)) * 180/pi;
 		phase = (phase == -0) ? 0 : phase;
-		cout<<"current in "<<ccvs[i - start]->getid()<<" ("<<vcvs[i - start]->getNegative()<<" "<<vcvs[i - start]->getPostive()<<")"<<" source = "<<mag<<" "<<phase<<endl;
+		cout<<"current in "<<ccvs[i - start]->getid()<<" ("<<ccvs[i - start]->getNegative()<<" "<<ccvs[i - start]->getPostive()<<")"<<" source = "<<mag<<" "<<phase<<endl;
 	}
 	for(int i = 0; i < r.size(); i++)
 	{
