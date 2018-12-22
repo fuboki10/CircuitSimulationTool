@@ -30,7 +30,14 @@ int VCVS::getPostive()
 {
 	return getNode2()->getn();
 }
-
+int VCVS::getINNegative()
+{
+	return INn1->getn();
+}
+int VCVS::getINPostive()
+{
+	return INn2->getn();
+}
 
 VCVS::~VCVS(void)
 {
