@@ -18,6 +18,8 @@ public:
 	float getB() const;
 	int into();
 	int from();
+	int INinto();
+	int INfrom();
 	~CCCS(void);
 };
 

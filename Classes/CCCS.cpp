@@ -25,6 +25,21 @@ int CCCS::from()
 {
 	return getNode1()->getn();
 }
+
+int CCCS::into()
+{
+	return getNode2()->getn();
+}
+
+int::CCCS::INfrom()
+{
+	return INn1->getn();
+}
+
+int::CCCS::INinto()
+{
+	return INn2->getn();
+}
 CCCS::~CCCS()
 {
 }

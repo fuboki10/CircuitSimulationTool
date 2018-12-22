@@ -6,6 +6,7 @@
 #include "Classes//Capacitor.h"
 #include "Classes//Inductor.h"
 #include "Classes\VCCS.h"
+#include "Classes\CCCS.h"
 float pi = 3.14159265358979323846;
 float omega = 50;
 
@@ -24,6 +25,7 @@ int main()
 	vector <VS*> vs;
 	vector <CS*> cs;
 	vector <VCCS*> vccs;
+	vector <CCCS*> cccs;
 	vector <Resistor*> r;
 	vector <Capacitor*> c;
 	vector <Inductor*> l;
@@ -187,9 +189,51 @@ int main()
 				vccs.push_back(tmp);
 				break;
 			}
+		case 'F':
+		case 'f':
+			{
+				node* INn1ptr = NULL;
+				node* INn2ptr = NULL;
+				fin>>value;
+				float phase;
+				fin>>phase;
+				fin>>n1;
+				//checking if the nodes already exists
+				for(int i = 0; i < nod.size(); i++)
+				{
+					if(n1 == nod[i]->getn())
+					{
+						INn1ptr = nod[i];
+						break;
+					}
+				}
+				fin>>n2;
+				for(int i = 0; i < nod.size(); i++)
+				{
+					if(n2 == nod[i]->getn())
+					{
+						INn2ptr = nod[i];
+						break;
+					}
+				}
+				//if the nodes are not there
+				//create them
+				if(!INn1ptr)
+				{
+					nod.push_back(new node(n1));
+					INn1ptr = nod[nod.size() - 1];
+				}
+				if(!INn2ptr)
+				{
+					nod.push_back(new node(n2));
+					INn2ptr = nod[nod.size() - 1];
+				}
+				CCCS* tmp = new CCCS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value, phase);
+				circuit.push_back(tmp);
+				cccs.push_back(tmp);
+				break;
 
-
-
+			}
 
 			 //circuit.push_back(CS(
 		}
@@ -240,9 +284,10 @@ int main()
 	//Creating both B and C matrices
 	//Actually B = C(transpose) in case of independent sources
 	//Read the modified nodal analysis algorithm to know more about these matrices
-	cx_fmat B(nod.size() - 1, vs.size() + vccs.size(), fill::zeros);
-	cx_fmat C(vs.size() + vccs.size(), nod.size() - 1, fill::zeros);
-	for(int i = 0; i < vs.size(); i++)
+	cx_fmat B(nod.size() - 1, vs.size() + vccs.size() + cccs.size(), fill::zeros);
+	cx_fmat C(vs.size() + vccs.size() + cccs.size(), nod.size() - 1, fill::zeros);
+	int end = vs.size();
+	for(int i = 0; i < end; i++)
 	{
 		if(vs[i]->getPostive() != 0)
 		{
@@ -256,29 +301,53 @@ int main()
 		}
 
 	}
-	for (int i = vs.size(); i < vccs.size() + vs.size(); i++)
+	int start = end;
+	end += vccs.size();
+	for (int i = start; i < end; i++)
 	{
-		if(vccs[i-vs.size()]->from() != 0)
+		if(vccs[i-start]->from() != 0)
 		{
-			B(vccs[i-vs.size()]->from() - 1, i) = 1;
+			B(vccs[i-start]->from() - 1, i) = 1;
 		}
-		if(vccs[i-vs.size()]->into() != 0)
+		if(vccs[i-start]->into() != 0)
 		{
-			B(vccs[i-vs.size()]->into() - 1, i) = -1;
+			B(vccs[i-start]->into() - 1, i) = -1;
 		}
-		if(vccs[i-vs.size()]->INfrom() != 0)
+		if(vccs[i-start]->INfrom() != 0)
 		{
-			C(i ,vccs[i-vs.size()]->INfrom() - 1) = 1;
+			C(i ,vccs[i-start]->INfrom() - 1) = 1;
 		}
-		if(vccs[i-vs.size()]->INinto() != 0)
+		if(vccs[i-start]->INinto() != 0)
 		{
-			C(i ,vccs[i-vs.size()]->INinto() - 1) = -1;
+			C(i ,vccs[i-start]->INinto() - 1) = -1;
 		}
-
+	}
+	start = end;
+	end += cccs.size();
+	for (int i = start; i < end; i++)
+	{
+		if(cccs[i-start]->from() != 0)
+		{
+			B(cccs[i-start]->from() - 1, i) = 1;
+		}
+		if(cccs[i-start]->into() != 0)
+		{
+			B(cccs[i-start]->into() - 1, i) = -1;
+		}
+		if(cccs[i-start]->INfrom() != 0)
+		{
+			B(cccs[i-start]->INfrom() - 1, i) = (cx_float)(1)/cccs[i-start]->getB();
+			C(i ,cccs[i-start]->INfrom() - 1) = 1;
+		}
+		if(cccs[i-start]->INinto() != 0)
+		{
+			B(cccs[i-start]->INinto() - 1, i) = (cx_float)(-1)/cccs[i-start]->getB();
+			C(i ,cccs[i-start]->INinto() - 1) = -1;
+		}
 	}
 	//B.print("B: ");
 	//C.print("C: ");
-	cx_fmat D(vccs.size() + vs.size(), vccs.size() + vs.size(), fill::zeros);
+	cx_fmat D(cccs.size() + vccs.size() + vs.size(),cccs.size() + vccs.size() + vs.size(), fill::zeros);
 	for (int i = vs.size(); i < vs.size() + vccs.size(); i++)
 	{
 		D(i,i) = (cx_float)(-1)/vccs[i - vs.size()]->getB();
@@ -286,7 +355,7 @@ int main()
 	//Creating matrix z
 	//Matrix z consists of 2 matrices
 	//Read more about modified nodal analysis
-	cx_fmat z(nod.size() - 1 + vs.size() + vccs.size(), 1, fill::zeros);
+	cx_fmat z(nod.size() - 1 + vs.size() + vccs.size() + cccs.size(), 1, fill::zeros);
 	for(int i = 0; i < cs.size(); i++)
 	{
 		if(cs[i]->from() != 0)
@@ -306,7 +375,7 @@ int main()
 	//Combining the four matrices to create the matrix A
 	//Note : A x = Z
 	//x is the solution
-	cx_fmat A(vccs.size() + vs.size() + nod.size() - 1, vccs.size() + vs.size() + nod.size() - 1, fill::zeros);
+	cx_fmat A(cccs.size() + vccs.size() + vs.size() + nod.size() - 1, cccs.size() + vccs.size() + vs.size() + nod.size() - 1, fill::zeros);
 	for(int i = 0; i < nod.size() - 1; i++)
 	{
 		for(int j = 0; j < nod.size() - 1; j++)
@@ -317,13 +386,13 @@ int main()
 	}
 	for(int i = 0; i < nod.size() - 1; i++)
 	{
-		for(int j = nod.size() - 1; j < vccs.size() + vs.size() + nod.size() - 1; j++)
+		for(int j = nod.size() - 1; j < cccs.size() + vccs.size() + vs.size() + nod.size() - 1; j++)
 		{
 			A(i, j) = B(i, j - nod.size() + 1);
 		}
 
 	}
-	for(int i = nod.size() - 1; i < vccs.size() + vs.size() + nod.size() - 1; i++)
+	for(int i = nod.size() - 1; i < cccs.size() + vccs.size() + vs.size() + nod.size() - 1; i++)
 	{
 		for(int j = 0; j < nod.size() - 1; j++)
 		{
@@ -331,9 +400,9 @@ int main()
 		}
 
 	}
-	for(int i = nod.size() - 1; i < vccs.size() + vs.size() + nod.size() - 1; i++)
+	for(int i = nod.size() - 1; i < cccs.size() + vccs.size() + vs.size() + nod.size() - 1; i++)
 	{
-		for(int j = nod.size() - 1; j < vccs.size() + vs.size() + nod.size() - 1; j++)
+		for(int j = nod.size() - 1; j < cccs.size() + vccs.size() + vs.size() + nod.size() - 1; j++)
 		{
 			A(i, j) = D(i - nod.size() + 1, j - nod.size() + 1);
 		}
@@ -341,7 +410,7 @@ int main()
 	}
 	//A.print("A: ");
 	//create the solution matrix
-	cx_fmat x = cx_fmat(1, vccs.size() + vs.size() + nod.size() - 1);
+	cx_fmat x = cx_fmat(1, cccs.size() + vccs.size() + vs.size() + nod.size() - 1);
 	x = solve(A, z);
 	//x.print("X:");
 	//printing the solution in a nice way
@@ -368,15 +437,33 @@ int main()
 		float phase = arg(volt) * 180/pi;
 		(volt.imag() == 0 && volt.real() == 0) ? cout<<"voltage of "<<circuit[i]->getid()<<" ("<<n1<<" "<<n2<<")"<<" = "<<mag<<endl : cout<<"voltage of "<<circuit[i]->getid()<<" ("<<n1<<" "<<n2<<") "<<" = "<<mag<<" "<<phase<<endl;
 	}*/
-
-	for(int i = 0; i < vs.size(); i++)
+	start = 0;
+	end = vs.size();
+	for(int i = start; i < end; i++)
 	{
 		float mag = sqrt(norm(x(nod.size() - 1 + i)));
 		float phase = arg(x(nod.size() - 1 + i)) * 180/pi;
 		phase = (phase == -0) ? 0 : phase;
 		cout<<"current in "<<vs[i]->getid()<<" ("<<vs[i]->getPostive()<<" "<<vs[i]->getNegative()<<")"<<" source = "<<mag<<" "<<phase<<endl;
 	}
-
+	start = end;
+	end += vccs.size();
+	for (int i = start; i < end; i++)
+	{
+		float mag = sqrt(norm(x(nod.size() - 1 + i)));
+		float phase = arg(x(nod.size() - 1 + i)) * 180/pi;
+		phase = (phase == -0) ? 0 : phase;
+		cout<<"current in "<<vccs[i - start]->getid()<<" ("<<vccs[i - start]->from()<<" "<<vccs[i - start]->into()<<")"<<" source = "<<mag<<" "<<phase<<endl;
+	}
+	start = end;
+	end += cccs.size();
+	for (int i = start; i < end; i++)
+	{
+		float mag = sqrt(norm(x(nod.size() - 1 + i)));
+		float phase = arg(x(nod.size() - 1 + i)) * 180/pi;
+		phase = (phase == -0) ? 0 : phase;
+		cout<<"current in "<<cccs[i - start]->getid()<<" ("<<cccs[i - start]->from()<<" "<<cccs[i - start]->into()<<")"<<" source = "<<mag<<" "<<phase<<endl;
+	}
 	for(int i = 0; i < r.size(); i++)
 	{
 		cx_float c;
@@ -427,6 +514,7 @@ int main()
 		float mag = sqrt(norm(tmp));
 		cout<<"current in "<<l[i]->getid()<<" ("<<l[i]->getNode1()->getn()<<" "<<l[i]->getNode2()->getn()<<")"<<" = "<<mag<<" "<<phase<<endl;
 	}
+
 	//freeing the dynamically allocated memory
 	for(int i = 0; i < circuit.size(); i++)
 	{
