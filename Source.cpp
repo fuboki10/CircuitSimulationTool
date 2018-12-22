@@ -143,6 +143,50 @@ int main()
 				l.push_back(tmp);
 				break;
 			}
+		case 'G':
+		case 'g':
+			{
+				node* INn1ptr = NULL;
+				node* INn2ptr = NULL;
+				fin>>value;
+				float phase;
+				fin>>phase;
+				fin>>n1;
+				//checking if the nodes already exists
+				for(int i = 0; i < nod.size(); i++)
+				{
+					if(n1 == nod[i]->getn())
+					{
+						INn1ptr = nod[i];
+						break;
+					}
+				}
+				fin>>n2;
+				for(int i = 0; i < nod.size(); i++)
+				{
+					if(n2 == nod[i]->getn())
+					{
+						INn2ptr = nod[i];
+						break;
+					}
+				}
+				//if the nodes are not there
+				//create them
+				if(!INn1ptr)
+				{
+					nod.push_back(new node(n1));
+					INn1ptr = nod[nod.size() - 1];
+				}
+				if(!INn2ptr)
+				{
+					nod.push_back(new node(n2));
+					INn2ptr = nod[nod.size() - 1];
+				}
+				VCCS* tmp = new VCCS(id, n1ptr, n2ptr, INn1ptr, INn2ptr, value, phase);
+				circuit.push_back(tmp);
+				vccs.push_back(tmp);
+				break;
+			}
 
 
 
@@ -196,8 +240,8 @@ int main()
 	//Creating both B and C matrices
 	//Actually B = C(transpose) in case of independent sources
 	//Read the modified nodal analysis algorithm to know more about these matrices
-	cx_fmat B(nod.size() - 1, vs.size(), fill::zeros);
-	cx_fmat C(vs.size(), nod.size() - 1, fill::zeros);
+	cx_fmat B(nod.size() - 1, vs.size() + vccs.size(), fill::zeros);
+	cx_fmat C(vs.size() + vccs.size(), nod.size() - 1, fill::zeros);
 	for(int i = 0; i < vs.size(); i++)
 	{
 		if(vs[i]->getPostive() != 0)
@@ -212,14 +256,37 @@ int main()
 		}
 
 	}
+	for (int i = vs.size(); i < vccs.size() + vs.size(); i++)
+	{
+		if(vccs[i-vs.size()]->from() != 0)
+		{
+			B(vccs[i-vs.size()]->from() - 1, i) = 1;
+		}
+		if(vccs[i-vs.size()]->into() != 0)
+		{
+			B(vccs[i-vs.size()]->into() - 1, i) = -1;
+		}
+		if(vccs[i-vs.size()]->INfrom() != 0)
+		{
+			C(i ,vccs[i-vs.size()]->INfrom() - 1) = 1;
+		}
+		if(vccs[i-vs.size()]->INinto() != 0)
+		{
+			C(i ,vccs[i-vs.size()]->INinto() - 1) = -1;
+		}
+
+	}
 	//B.print("B: ");
 	//C.print("C: ");
-
-
+	cx_fmat D(vccs.size() + vs.size(), vccs.size() + vs.size(), fill::zeros);
+	for (int i = vs.size(); i < vs.size() + vccs.size(); i++)
+	{
+		D(i,i) = (cx_float)(-1)/vccs[i - vs.size()]->getB();
+	}
 	//Creating matrix z
 	//Matrix z consists of 2 matrices
 	//Read more about modified nodal analysis
-	cx_fmat z(nod.size() - 1 + vs.size(), 1, fill::zeros);
+	cx_fmat z(nod.size() - 1 + vs.size() + vccs.size(), 1, fill::zeros);
 	for(int i = 0; i < cs.size(); i++)
 	{
 		if(cs[i]->from() != 0)
@@ -239,7 +306,7 @@ int main()
 	//Combining the four matrices to create the matrix A
 	//Note : A x = Z
 	//x is the solution
-	cx_fmat A(vs.size() + nod.size() - 1, vs.size() + nod.size() - 1, fill::zeros);
+	cx_fmat A(vccs.size() + vs.size() + nod.size() - 1, vccs.size() + vs.size() + nod.size() - 1, fill::zeros);
 	for(int i = 0; i < nod.size() - 1; i++)
 	{
 		for(int j = 0; j < nod.size() - 1; j++)
@@ -250,13 +317,13 @@ int main()
 	}
 	for(int i = 0; i < nod.size() - 1; i++)
 	{
-		for(int j = nod.size() - 1; j < vs.size() + nod.size() - 1; j++)
+		for(int j = nod.size() - 1; j < vccs.size() + vs.size() + nod.size() - 1; j++)
 		{
 			A(i, j) = B(i, j - nod.size() + 1);
 		}
 
 	}
-	for(int i = nod.size() - 1; i < vs.size() + nod.size() - 1; i++)
+	for(int i = nod.size() - 1; i < vccs.size() + vs.size() + nod.size() - 1; i++)
 	{
 		for(int j = 0; j < nod.size() - 1; j++)
 		{
@@ -264,17 +331,17 @@ int main()
 		}
 
 	}
-	for(int i = nod.size() - 1; i < vs.size() + nod.size() - 1; i++)
+	for(int i = nod.size() - 1; i < vccs.size() + vs.size() + nod.size() - 1; i++)
 	{
-		for(int j = nod.size() - 1; j < vs.size() + nod.size() - 1; j++)
+		for(int j = nod.size() - 1; j < vccs.size() + vs.size() + nod.size() - 1; j++)
 		{
-			A(i, j) = cx_float(0,0);
+			A(i, j) = D(i - nod.size() + 1, j - nod.size() + 1);
 		}
 
 	}
 	//A.print("A: ");
 	//create the solution matrix
-	cx_fmat x = cx_fmat(1, vs.size() + nod.size() - 1);
+	cx_fmat x = cx_fmat(1, vccs.size() + vs.size() + nod.size() - 1);
 	x = solve(A, z);
 	//x.print("X:");
 	//printing the solution in a nice way

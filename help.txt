@@ -2,3 +2,7 @@ E - vcvs
 F - cccs
 g - vccs
 h - ccvs
+
+
+// example
+G n1 n2 B phase n1 n2 
