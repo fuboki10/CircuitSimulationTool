@@ -5,4 +5,4 @@ h - ccvs
 
 
 // example
-G n1 n2 B phase n1 n2 
+G n1 n2 B n1 n2 

@@ -678,4 +678,6 @@ int main()
 	{
 		delete nod[i];
 	}
+	system("pause");
+	return 0;
 }	
