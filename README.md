@@ -1,5 +1,3 @@
 # Circuits-Project
 
-السلام عليكم
-
-وعليكم السلام
+Circuit tool to solve AC/DC circuits
